@@ -1,7 +1,6 @@
 /// <reference path="./libraries/p5.global-mode.d.ts" />
 
 var data = [];
-var splittedData = {};
 var ready = false;
 
 var minTime, maxTime;
@@ -12,6 +11,7 @@ var mapScale;
 async function setup() {
   createCanvas(800, 800);
 
+  // load CSV
   data = await loadData("data/natural_disaster_human_mobility_rammasun.csv");
 
   // data = data.slice(0, 10000);
