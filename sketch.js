@@ -9,10 +9,6 @@ var minLat, maxLat, mapWidth, mapCenterX;
 var minLong, maxLong, mapHeight, mapCenterY;
 var mapScale;
 
-var varFrameRate = 30;
-var sceneLength = 100000; //100'000 milliseconds = 100 seconds
-var numberOfCycles = varFrameRate * sceneLength;
-
 async function setup() {
   createCanvas(800, 800);
 
