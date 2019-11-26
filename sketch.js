@@ -7,83 +7,164 @@ var minTime, maxTime;
 var minLat, maxLat, mapWidth, mapCenterX;
 var minLong, maxLong, mapHeight, mapCenterY;
 var mapScale;
+var fr = 30;
+var fastForwardMultiplier = 10000;
+var beforeIndex = 0;
+var duringIndex = 0;
+var timestamp = 0;
+
+var phase = "before";
 
 async function setup() {
-  createCanvas(800, 800);
+  // setup canvas
+  createCanvas(7680 / 2, 1080 / 2); // (4x1920) * 1080, remove "/2" for production
+  var screenOneX = 0;
+  var screenTwoX = width / 4;
+  var screenThreeX = (width / 4) * 2;
+  var screenFourX = (width / 4) * 3;
 
   // load CSV
   data = await loadData("data/natural_disaster_human_mobility_rammasun.csv");
+  data = mapSetup(data, screenOneX);
 
-  // data = data.slice(0, 10000);
+  function mapSetup(data, offset) {
+    // parse time to javascript date object
+    data = data.map(function(x) {
+      x.time = Date.parse(x.time);
+      return x;
+    });
 
-  // parse time to javascript date object
-  data = data.map(function(x) {
-    x.time = Date.parse(x.time);
-    return x;
-  });
+    // sort array by time
+    data = data.sort(compare);
 
-  // sort array by time
-  data = data.sort(compare);
+    // get first and last timestamp
+    minTime = d3.min(data, d => d.time);
+    maxTime = d3.max(data, d => d.time);
 
-  // get first and last timestamp
-  minTime = d3.min(data, d => d.time);
-  maxTime = d3.max(data, d => d.time);
+    // add entry for milliseconds since first timestamp
+    data = data.map(function(x) {
+      x.millisecondsFromStart = x.time - minTime;
+      return x;
+    });
 
-  // add entry for milliseconds since first timestamp
-  data = data.map(function(x) {
-    x.millisecondsFromZero = x.time - minTime;
-    return x;
-  });
+    console.log("First tweet: " + minTime);
+    console.log("Last tweet: " + maxTime);
+    console.log("Number of Days: " + (maxTime - minTime) / 1000 / 60 / 60 / 24);
 
-  console.log("First tweet: " + minTime);
-  console.log("Last tweet: " + maxTime);
-  console.log("Number of Days: " + (maxTime - minTime) / 1000 / 60 / 60 / 24);
+    // get longitude center
+    minLong = d3.min(data, d => d["longitude.anon"]);
+    maxLong = d3.max(data, d => d["longitude.anon"]);
+    mapWidth = maxLong - minLong;
+    mapCenterX = (maxLong + minLong) / 2;
 
-  // get longitude center
-  minLong = d3.min(data, d => d["longitude.anon"]);
-  maxLong = d3.max(data, d => d["longitude.anon"]);
-  mapWidth = maxLong - minLong;
-  mapCenterX = (maxLong + minLong) / 2;
+    // get latitude center
+    minLat = d3.min(data, d => d.latitude);
+    maxLat = d3.max(data, d => d.latitude);
+    mapHeight = maxLat - minLat;
+    mapCenterY = (maxLat + minLat) / 2;
 
-  // get latitude center
-  minLat = d3.min(data, d => d.latitude);
-  maxLat = d3.max(data, d => d.latitude);
-  mapHeight = maxLat - minLat;
-  mapCenterY = (maxLat + minLat) / 2;
+    // define map scale dimension (longitude or latitude)
+    mapScale = Math.min(
+      ((width / 4) * 0.7) / mapWidth,
+      (height * 0.7) / mapHeight
+    );
 
-  // define map scale dimension (longitude or latitude)
-  mapScale = Math.min(width / mapWidth, height / mapHeight);
+    // add entries for positionX and positionY
+    for (var i = 0; i < data.length; i++) {
+      data[i].positionX =
+        (parseFloat(data[i]["longitude.anon"]) - mapCenterX) * mapScale +
+        width / 4 / 2 +
+        offset;
+      data[i].positionY =
+        (parseFloat(data[i].latitude) - mapCenterY) * mapScale + height / 2;
+    }
 
-  // add entries for positionX and positionY
-  for (var i = 0; i < data.length; i++) {
-    data[i].positionX = (parseFloat(data[i]["longitude.anon"]) - mapCenterX) * mapScale + width / 2;
-    data[i].positionY = (parseFloat(data[i].latitude) - mapCenterY) * mapScale + height / 2;
+    var before = data.slice(0, 39563);
+    var during = data.slice(39563);
+
+    return {
+      before: before,
+      during: during
+    };
   }
 
+  background(0, 0, 0);
+
+  // guides for screens
+  fill(255, 255, 255);
+  stroke(255, 255, 255);
+  line(width / 4, 0, width / 4, height);
+  line((width / 4) * 2, 0, (width / 4) * 2, height);
+  line((width / 4) * 3, 0, (width / 4) * 3, height);
+
+  // dimmed points
+  for (var i = 0; i < data.before.length; i++) {
+    stroke(20);
+    point(data.before[i].positionX, data.before[i].positionY);
+  }
+
+  // citiy names
+  text("Manila, Philippines", 50, 50);
+
   console.log(data);
+  frameRate(fr);
   ready = true;
 }
 
 function draw() {
   if (!ready) {
-    background(255, 0, 0);
     return;
-  } else {
-    background(0, 0, 0);
   }
 
-  // loop over data
+  var currentTime = (timestamp / fr) * 1000;
 
-  for (var i = 0; i < data.length; i++) {
-    // milliseconds since start
-    var currentTime = millis() * 1000;
-    var timestamp = data[i].time;
-    stroke(242, 221, 176, 60);
-    if (timestamp <= minTime + currentTime) {
-      point(data[i].positionX, data[i].positionY);
+  beginShape(POINTS);
+
+  if (phase === "before") {
+    stroke(242, 221, 176, 50);
+    while (
+      data.before[beforeIndex] &&
+      data.before[beforeIndex].millisecondsFromStart <= currentTime
+    ) {
+      vertex(
+        data.before[beforeIndex].positionX,
+        data.before[beforeIndex].positionY
+      );
+      beforeIndex++;
+    }
+    if (!data.before[beforeIndex]) {
+      phase = "during";
+      console.log(phase);
+      timestamp = (data.during[0].millisecondsFromStart / 1000) * fr;
+      text("Rammasun", width / 4 - 250, height / 2);
+      text("Number of tweets: 817,516", width / 4 - 250, height / 2 + 20);
+      text("Start: 2014-07-02", width / 4 - 250, height / 2 + 40);
+      text("End: 2014-08-03", width / 4 - 250, height / 2 + 60);
     }
   }
-  console.log(frameRate());
+
+  if (phase === "during") {
+    stroke(255, 0, 0, 5);
+    while (
+      data.during[duringIndex] &&
+      data.during[duringIndex].millisecondsFromStart <= currentTime
+    ) {
+      vertex(
+        data.during[duringIndex].positionX,
+        data.during[duringIndex].positionY
+      );
+      duringIndex++;
+    }
+  }
+
+  endShape();
+
+  // speed
+  timestamp = timestamp + 20000;
+
+  // if (frameCount % fr == 0) {
+  //   console.log(frameRate());
+  // }
 
   // connect user test
 
