@@ -1,7 +1,7 @@
 // Global variables
-var pg, backgroundGradient, glow, fontRegular;
-var pgWidth = 1920 * 4;
-var pgHeight = 1080 * 4;
+var pg, flash, backgroundGradient, glow, fontRegular;
+var pgWidth = (flashWidth = 1920 * 4);
+var pgHeight = (flashHeight = 1080 * 4);
 var ready = false;
 var data = [],
   before = [],
@@ -49,6 +49,9 @@ function draw() {
   }
   var currentTime = (timestamp / fr) * 1000;
 
+  flash = createGraphics(flashWidth, flashHeight);
+  flash.noStroke();
+
   if (phase === "before") {
     while (before[bIndex] && before[bIndex].timelineMs <= currentTime) {
       pg.fill(65, 217, 242, 50);
@@ -59,6 +62,10 @@ function draw() {
       pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 10, 10);
       pg.fill(65, 217, 242, 10);
       pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
+
+      // flashing points
+      flash.fill(65, 217, 242, 100);
+      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
 
       bIndex++;
     }
@@ -79,6 +86,10 @@ function draw() {
       pg.fill(230, 5, 14, 10);
       pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
 
+      // flashing points
+      flash.fill(230, 5, 14, 100);
+      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
+
       dIndex++;
     }
     if (!during[dIndex]) {
@@ -89,9 +100,10 @@ function draw() {
 
   imageMode(CORNER);
   image(backgroundGradient, 0, 0, width, height);
-  image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // https://p5js.org/reference/#/p5/image
+  image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // large map
+  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points
   imageMode(CENTER);
-  image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4);
+  image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); // small map
   rectMode(CENTER);
   noFill();
   strokeWeight(5);
@@ -99,7 +111,7 @@ function draw() {
   rect(960, 580, (1920 * 0.75) / 2, (1080 * 0.75) / 3);
   noStroke();
 
-  timestamp = timestamp + 100000; // speed
+  timestamp = timestamp + 10000; // speed
 
   var noTweets = (bIndex + dIndex)
     .toString()
@@ -132,9 +144,9 @@ function draw() {
   );
   text(description, 5860, 500);
 
-  // if (frameCount % fr == 0) {
-  //   console.log(frameRate());
-  // }
+  if (frameCount % fr == 0) {
+    console.log(frameRate());
+  }
 }
 
 function radialGradient(x, y, w, h, inner, outer) {
