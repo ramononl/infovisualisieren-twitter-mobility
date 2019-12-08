@@ -49,9 +49,10 @@ function draw() {
   }
   var currentTime = (timestamp / fr) * 1000;
 
-  flash = createGraphics(flashWidth, flashHeight);
-  flash.noStroke();
+  flash = createGraphics(flashWidth, flashHeight); // disable for better performance
+  flash.noStroke(); // disable for better performance
 
+  // display dots before catastrophe
   if (phase === "before") {
     while (before[bIndex] && before[bIndex].timelineMs <= currentTime) {
       pg.fill(65, 217, 242, 50);
@@ -64,8 +65,8 @@ function draw() {
       pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
 
       // flashing points
-      flash.fill(65, 217, 242, 100);
-      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
+      flash.fill(65, 217, 242, 100); // disable for better performance
+      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20); // disable for better performance
 
       bIndex++;
     }
@@ -75,6 +76,7 @@ function draw() {
     }
   }
 
+  // display dots during catastrophe
   if (phase === "during") {
     while (during[dIndex] && during[dIndex].timelineMs <= currentTime) {
       pg.fill(230, 5, 14, 50);
@@ -87,8 +89,8 @@ function draw() {
       pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
 
       // flashing points
-      flash.fill(230, 5, 14, 100);
-      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
+      flash.fill(230, 5, 14, 100); // disable for better performance
+      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20); // disable for better performance
 
       dIndex++;
     }
@@ -98,12 +100,15 @@ function draw() {
     }
   }
 
+  // display offscreen canvases
   imageMode(CORNER);
   image(backgroundGradient, 0, 0, width, height);
   image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // large map
-  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points
+  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points // disable for better performance
   imageMode(CENTER);
   image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); // small map
+
+  // zoom indicator rectangle
   rectMode(CENTER);
   noFill();
   strokeWeight(5);
@@ -111,8 +116,7 @@ function draw() {
   rect(960, 580, (1920 * 0.75) / 2, (1080 * 0.75) / 3);
   noStroke();
 
-  timestamp = timestamp + 10000; // speed
-
+  // display text
   var noTweets = (bIndex + dIndex)
     .toString()
     .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
@@ -143,6 +147,9 @@ function draw() {
     400
   );
   text(description, 5860, 500);
+
+  // playback speed
+  timestamp = timestamp + 10000;
 
   if (frameCount % fr == 0) {
     console.log(frameRate());
