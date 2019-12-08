@@ -1,17 +1,20 @@
-var pg;
-var backgroundGradient;
-var glow;
+// Global variables
+var pg, backgroundGradient, glow, fontRegular;
 var pgWidth = 1920 * 4;
 var pgHeight = 1080 * 4;
 var ready = false;
-var data = [];
-var before = [];
-var during = [];
+var data = [],
+  before = [],
+  during = [];
 var phase = "before";
 var fr = 30;
-var timestamp = 0;
-var bIndex = 0;
-var dIndex = 0;
+var timestamp = 0,
+  bIndex = 0,
+  dIndex = 0;
+
+function preload() {
+  fontRegular = loadFont("assets/ShareTechMono.ttf");
+}
 
 async function setup() {
   createCanvas(1920 * 4, 1080);
@@ -62,12 +65,6 @@ function draw() {
     if (!before[bIndex]) {
       phase = "during";
       console.log(phase);
-      timestamp = (during[0].timelineMs / 1000) * fr;
-      // text("Rammasun", width / 4 - 250, height / 2);
-      // text("Typhoon", width / 4 - 250, height / 2 + 20);
-      // text("Number of tweets: 817,516", width / 4 - 250, height / 2 + 40);
-      // text("Start: 2014-07-02", width / 4 - 250, height / 2 + 60);
-      // text("End: 2014-08-03", width / 4 - 250, height / 2 + 80);
     }
   }
 
@@ -87,8 +84,6 @@ function draw() {
     if (!during[dIndex]) {
       phase = "end";
       console.log(phase);
-      fill(0, 0, 0, 50);
-      rect(0, 0, width / 4, height);
     }
   }
 
@@ -104,7 +99,7 @@ function draw() {
   rect(960, 580, (1920 * 0.75) / 2, (1080 * 0.75) / 3);
   noStroke();
 
-  timestamp = timestamp + 10000; // speed
+  timestamp = timestamp + 100000; // speed
 
   var noTweets = (bIndex + dIndex)
     .toString()
@@ -113,9 +108,10 @@ function draw() {
   var displayDate;
   if (phase === "before") {
     displayDate = before[bIndex].dateTime;
-  }
-  if (phase === "during") {
+  } else if (phase === "before") {
     displayDate = during[dIndex].dateTime;
+  } else {
+    displayDate = during[during.length - 1].dateTime;
   }
 
   var description =
@@ -123,6 +119,7 @@ function draw() {
 
   rectMode(CORNER);
   textSize(32);
+  textFont(fontRegular);
   fill(65, 217, 242);
   text("Manila, Philippines", 100, 100);
   text("Nº tweets: " + noTweets, 5860, 100);
@@ -135,9 +132,9 @@ function draw() {
   );
   text(description, 5860, 500);
 
-  if (frameCount % fr == 0) {
-    console.log(frameRate());
-  }
+  // if (frameCount % fr == 0) {
+  //   console.log(frameRate());
+  // }
 }
 
 function radialGradient(x, y, w, h, inner, outer) {
