@@ -1,7 +1,14 @@
 // Global variables
-var pg, flash, backgroundGradient, glow, fontRegular;
+var pg, flash, backgroundGradient, info, glow, fontRegular;
 var pgWidth = (flashWidth = 1920 * 4);
 var pgHeight = (flashHeight = 1080 * 4);
+var infoProperties = {
+  width: 1000,
+  height: 830,
+  x: 5960,
+  y: 100
+};
+var fadeOut = 0;
 var ready = false;
 var data = [],
   before = [],
@@ -18,6 +25,7 @@ function preload() {
 
 async function setup() {
   createCanvas(1920 * 4, 1080);
+  textFont(fontRegular);
 
   // radial gradient background
   var outer = color(1, 6, 25);
@@ -38,6 +46,10 @@ async function setup() {
 
   pg = createGraphics(pgWidth, pgHeight);
   pg.noStroke();
+  flash = createGraphics(flashWidth, flashHeight);
+  flash.noStroke();
+  info = createGraphics(infoProperties.width, infoProperties.height);
+  infoContent();
 
   frameRate(fr);
   ready = true;
@@ -49,8 +61,7 @@ function draw() {
   }
   var currentTime = (timestamp / fr) * 1000;
 
-  flash = createGraphics(flashWidth, flashHeight); // disable for better performance
-  flash.noStroke(); // disable for better performance
+  flash.clear();
 
   // display dots before catastrophe
   if (phase === "before") {
@@ -65,8 +76,8 @@ function draw() {
       pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
 
       // flashing points
-      flash.fill(65, 217, 242, 100); // disable for better performance
-      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20); // disable for better performance
+      flash.fill(65, 217, 242, 75);
+      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
 
       bIndex++;
     }
@@ -89,8 +100,8 @@ function draw() {
       pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
 
       // flashing points
-      flash.fill(230, 5, 14, 100); // disable for better performance
-      flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20); // disable for better performance
+      flash.fill(230, 5, 14, 75);
+      flash.ellipse(during[dIndex].positionX, during[dIndex].positionY, 20, 20);
 
       dIndex++;
     }
@@ -103,20 +114,21 @@ function draw() {
   // display offscreen canvases
   imageMode(CORNER);
   image(backgroundGradient, 0, 0, width, height);
+  image(info, infoProperties.x, infoProperties.y);
   image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // large map
-  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points // disable for better performance
+  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points
   imageMode(CENTER);
-  image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); // small map
+  image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map
 
   // zoom indicator rectangle
   rectMode(CENTER);
   noFill();
   strokeWeight(5);
-  stroke(230, 5, 14);
-  rect(960, 580, (1920 * 0.75) / 2, (1080 * 0.75) / 3);
+  stroke(230, 5, 14, 175);
+  rect(960, 570, (1920 * 0.75) / 2, (1080 * 0.75) / 4);
   noStroke();
 
-  // display text
+  // dynamic text
   var noTweets = (bIndex + dIndex)
     .toString()
     .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
@@ -124,36 +136,99 @@ function draw() {
   var displayDate;
   if (phase === "before") {
     displayDate = before[bIndex].dateTime;
-  } else if (phase === "before") {
+  } else if (phase === "during") {
     displayDate = during[dIndex].dateTime;
   } else {
     displayDate = during[during.length - 1].dateTime;
   }
 
-  var description =
-    "Typhoon Rammasun, known in the Philippines as Typhoon Glenda,\nwas one of the only two Category 5 super typhoons on record in the\nSouth China Sea, with the other one being Pamela in 1954.\n\nRammasun had destructive impacts across the Philippines,\nSouth China, and Vietnam in July 2014.\n\nThough initially forecast to make landfall in Cagayan Valley, the\nstorm followed a more westerly path and was later forecast to make\nlandfall in the Bicol Region and then pass through Bataan and\nZambales before brushing past Metro Manila.";
+  displayDate = displayDate.split(" ");
+  displayDateDay = displayDate[0];
+  displayDateTime = displayDate[1];
 
+  textAlign(LEFT, TOP);
+  textSize(30);
+  fill(65, 217, 242, 150);
+  text("Manila, Philippines", 440, 265);
+  fill(0, 0, 0, 80);
+  strokeWeight(1);
   rectMode(CORNER);
-  textSize(32);
-  textFont(fontRegular);
-  fill(65, 217, 242);
-  text("Manila, Philippines", 100, 100);
-  text("Nº tweets: " + noTweets, 5860, 100);
-  text(displayDate, 5860, 200);
-  text("Rammasun – god of thunder", 5860, 300);
-  text(
-    "Formed: July 9, 2014 | Brushed past Metro Manila: July 15, 2014",
-    5860,
-    400
+  if (phase === "before") {
+    stroke(65, 217, 242);
+  } else {
+    stroke(230, 5, 14);
+  }
+  rect(
+    infoProperties.x,
+    infoProperties.y + 705,
+    info.width / 2,
+    info.height - 705
   );
-  text(description, 5860, 500);
+  rect(
+    infoProperties.x + info.width / 2,
+    infoProperties.y + 705,
+    info.width / 2,
+    info.height - 705
+  );
+  if (phase === "before") {
+    fill(65, 217, 242);
+  } else {
+    fill(230, 5, 14);
+  }
+  noStroke();
+  rect(infoProperties.x, infoProperties.y + 705, info.width, 20);
+  textSize(30);
+  textAlign(LEFT, BASELINE);
+  text(
+    "Nº tweets",
+    infoProperties.x + 20,
+    infoProperties.y + infoProperties.height - 20
+  );
+  text(
+    "Date",
+    infoProperties.x + infoProperties.width / 2 + 20,
+    infoProperties.y + infoProperties.height - 20
+  );
+  textSize(38);
+  textAlign(RIGHT, BASELINE);
+  text(
+    noTweets,
+    infoProperties.x + infoProperties.width / 2 - 20,
+    infoProperties.y + infoProperties.height - 20
+  );
+  text(
+    displayDateTime,
+    infoProperties.x + infoProperties.width - 20,
+    infoProperties.y + infoProperties.height - 60
+  );
+  text(
+    displayDateDay,
+    infoProperties.x + infoProperties.width - 20,
+    infoProperties.y + infoProperties.height - 20
+  );
+
+  // end overlay
+  if (phase === "end") {
+    rectMode(CORNER);
+    fill(1, 6, 25, fadeOut);
+    rect(0, 0, width, height);
+    rectMode(CENTER);
+    textSize(72);
+    fill(255, 255, 255, fadeOut);
+    textAlign(CENTER, CENTER);
+    text("play again", width / 2, height / 2);
+
+    if (fadeOut < 180) {
+      fadeOut += 2;
+    }
+  }
 
   // playback speed
   timestamp = timestamp + 10000;
 
-  if (frameCount % fr == 0) {
-    console.log(frameRate());
-  }
+  // if (frameCount % fr == 0) {
+  //   console.log(frameRate());
+  // }
 }
 
 function radialGradient(x, y, w, h, inner, outer) {
@@ -192,6 +267,55 @@ function formatData(csv, mapProperties) {
   data = data.sort(compare);
 
   return data;
+}
+
+function infoContent() {
+  info.rectMode(CORNER);
+  info.fill(0, 0, 0, 80);
+  info.strokeWeight(2);
+  info.stroke(65, 217, 242);
+  info.rect(0, 0, info.width, 675);
+  info.noStroke();
+  info.fill(65, 217, 242);
+  info.rect(0, 0, info.width, 20);
+
+  info.textFont(fontRegular);
+
+  var description =
+    "Typhoon Rammasun, known in the Philippines as Typhoon Glenda, was one of the only two Category 5 super typhoons on record in the South China Sea, with the other one being Pamela in 1954.\n\nRammasun had destructive impacts across the Philippines, South China, and Vietnam in July 2014. Though initially forecast to make landfall in Cagayan Valley, the storm followed a more westerly path and was later forecast to make landfall in the Bicol Region and then pass through Bataan and Zambales before brushing past Metro Manila.\n\nAt least 90% of the total residents of Metro Manila lost power, as poles were toppled and lines downed. Strong winds from the storm destroyed several homes in the slums. Most of the capital area was also completely shut down.";
+
+  info.fill(65, 217, 242);
+  info.textSize(54);
+  info.text("Rammasun", 20, 75);
+  info.textSize(30);
+  info.text("god of thunder", 270, 75);
+
+  textAlign(LEFT, TOP);
+  info.textSize(20);
+  info.text(
+    "Formed: July 9, 2014 | Brushed past Metro Manila: July 15, 2014",
+    20,
+    110
+  );
+  info.text("Highest winds:", 20, 150);
+  info.text("10-minute sustained – 165 km/h (105 mph)", 180, 150);
+  info.text("1-minute sustained – 260 km/h (160 mph)", 180, 175);
+  info.text("Fatalities: 222 total", 20, 215);
+  info.text("Damage: $8.03 billion (2014 USD)", 20, 255);
+
+  info.rect(0, 295, info.width, 1);
+  info.text(description, 20, 340, info.width - 40, 400);
+}
+
+function mousePressed() {
+  // reset if sketch is finished
+  if (phase === "end") {
+    phase = "before";
+    timestamp = 0;
+    bIndex = 0;
+    dIndex = 0;
+    pg.clear();
+  }
 }
 
 function compare(a, b) {
