@@ -111,18 +111,9 @@ function draw() {
     }
   }
 
-  // background canvases
+  // background canvas
   imageMode(CORNER);
   image(backgroundGradient, 0, 0, width, height);
-  // background grid
-  for (var x = 0; x < width; x += width / 128) {
-    for (var y = 0; y < height; y += height / 18) {
-      stroke(65, 217, 242, 1);
-      strokeWeight(1);
-      line(x, 0, x, height);
-      line(0, y, width, y);
-    }
-  }
   // display offscreen canvases
   image(info, infoProperties.x, infoProperties.y);
   image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // large map
