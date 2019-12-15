@@ -4,8 +4,8 @@ var pgWidth = (flashWidth = 1920 * 4);
 var pgHeight = (flashHeight = 1080 * 4);
 var infoProperties = {
   width: 1000,
-  height: 830,
-  x: 5960,
+  height: 880,
+  x: 6050,
   y: 100
 };
 var fadeOut = 0;
@@ -125,7 +125,11 @@ function draw() {
   rectMode(CENTER);
   noFill();
   strokeWeight(5);
-  stroke(230, 5, 14, 175);
+  if (phase === "before") {
+    stroke(65, 217, 242, 175);
+  } else {
+    stroke(230, 5, 14, 175);
+  }
   rect(960, 570, (1920 * 0.75) / 2, (1080 * 0.75) / 4);
   noStroke();
 
@@ -159,17 +163,12 @@ function draw() {
   } else {
     stroke(230, 5, 14);
   }
-  rect(
-    infoProperties.x,
-    infoProperties.y + 705,
-    info.width / 2,
-    info.height - 705
-  );
+  rect(infoProperties.x, infoProperties.y + 700, info.width / 2, 135);
   rect(
     infoProperties.x + info.width / 2,
-    infoProperties.y + 705,
+    infoProperties.y + 700,
     info.width / 2,
-    info.height - 705
+    135
   );
   if (phase === "before") {
     fill(65, 217, 242);
@@ -177,35 +176,31 @@ function draw() {
     fill(230, 5, 14);
   }
   noStroke();
-  rect(infoProperties.x, infoProperties.y + 705, info.width, 20);
+  rect(infoProperties.x, infoProperties.y + 700, info.width, 20);
   textSize(30);
   textAlign(LEFT, BASELINE);
-  text(
-    "Nº tweets",
-    infoProperties.x + 20,
-    infoProperties.y + infoProperties.height - 20
-  );
+  text("Nº tweets", infoProperties.x + 20, infoProperties.y + 810);
   text(
     "Date",
     infoProperties.x + infoProperties.width / 2 + 20,
-    infoProperties.y + infoProperties.height - 20
+    infoProperties.y + 810
   );
   textSize(38);
   textAlign(RIGHT, BASELINE);
   text(
     noTweets,
     infoProperties.x + infoProperties.width / 2 - 20,
-    infoProperties.y + infoProperties.height - 20
+    infoProperties.y + 810
   );
   text(
     displayDateTime,
     infoProperties.x + infoProperties.width - 20,
-    infoProperties.y + infoProperties.height - 60
+    infoProperties.y + 770
   );
   text(
     displayDateDay,
     infoProperties.x + infoProperties.width - 20,
-    infoProperties.y + infoProperties.height - 20
+    infoProperties.y + 810
   );
 
   // end overlay
@@ -235,12 +230,22 @@ function draw() {
 function radialGradient(x, y, w, h, inner, outer) {
   backgroundGradient.noStroke();
   backgroundGradient.fill(0);
-  backgroundGradient.rect(100, 100, 100, 100);
   for (let i = Math.max(w, h); i > 0; i--) {
     const step = i / Math.max(w, h);
-    const colour = lerpColor(inner, outer, step);
-    backgroundGradient.fill(colour);
+    const color = lerpColor(inner, outer, step);
+    backgroundGradient.fill(color);
     backgroundGradient.ellipse(x, y, step * w, step * h);
+  }
+
+  backgroundGradient.noFill();
+  backgroundGradient.stroke(65, 217, 242, 20);
+
+  for (var x = 0; x < width; x += width / 128) {
+    backgroundGradient.line(x, 0, x, height);
+  }
+
+  for (var y = 0; y < height; y += height / 18) {
+    backgroundGradient.line(0, y, width, y);
   }
 }
 
@@ -272,13 +277,14 @@ function formatData(csv, mapProperties) {
 
 function infoContent() {
   info.rectMode(CORNER);
-  info.fill(1, 6, 25, 180);
-  info.strokeWeight(2);
-  info.stroke(65, 217, 242);
-  info.rect(0, 0, info.width, 675);
   info.noStroke();
+  info.fill(1, 6, 25, 180);
+  info.rect(0, 0, info.width, 660);
   info.fill(65, 217, 242);
   info.rect(0, 0, info.width, 20);
+  info.rect(0, 0, 1, 660);
+  info.rect(info.width - 1, 0, 1, 660);
+  info.rect(0, 660, info.width, 1);
 
   info.textFont(fontRegular);
 
@@ -290,33 +296,37 @@ function infoContent() {
   info.text("Rammasun", 20, 75);
   info.textSize(30);
   info.text("god of thunder", 270, 75);
+  info.rect(0, 95, info.width, 1);
 
-  textAlign(LEFT, TOP);
+  info.textAlign(LEFT, TOP);
   info.textSize(20);
-  info.text(
-    "Formed: July 9, 2014 | Brushed past Metro Manila: July 15, 2014",
-    20,
-    110
-  );
-  info.text("Highest winds:", 20, 150);
-  info.text("10-minute sustained – 165 km/h (105 mph)", 180, 150);
-  info.text("1-minute sustained – 260 km/h (160 mph)", 180, 175);
-  info.text("Fatalities: 222 total", 20, 215);
-  info.text("Damage: $8.03 billion (2014 USD)", 20, 255);
+  info.text("Formed:", 20, 109);
+  info.text("July 9, 2014, brushed past Metro Manila July, 15th", 200, 109);
 
-  info.rect(0, 295, info.width, 1);
-  info.text(description, 20, 340, info.width - 40, 400);
-}
+  info.rect(0, 140, info.width, 1);
+  info.text("Highest winds:", 20, 152);
+  info.text("10-minute sustained – 165 km/h (105 mph)", 200, 152);
+  info.text("1-minute sustained – 260 km/h (160 mph)", 200, 177);
 
-function mousePressed() {
-  // reset if sketch is finished
-  if (phase === "end") {
-    phase = "before";
-    timestamp = 0;
-    bIndex = 0;
-    dIndex = 0;
-    pg.clear();
-  }
+  info.rect(0, 208, info.width, 1);
+  info.text("Fatalities:", 20, 220);
+  info.text("222 total", 200, 220);
+  info.rect(0, 251, info.width, 1);
+  info.text("Damage:", 20, 263);
+  info.text("$8.03 billion (2014 USD)", 200, 263);
+
+  info.rect(0, 294, info.width, 1);
+  info.text(description, 20, 326, info.width - 40, 400);
+
+  info.fill(65, 217, 242);
+  info.ellipse(10, info.height - 15, 20);
+  info.fill(230, 5, 14);
+  info.ellipse(235, info.height - 15, 20);
+
+  info.fill(65, 217, 242);
+  info.text("before typhoon", 30, info.height - 25);
+  info.fill(230, 5, 14);
+  info.text("during typhoon", 255, info.height - 25);
 }
 
 function compare(a, b) {
@@ -357,4 +367,21 @@ function mapScale(data) {
     mapCenterY: mapCenterY,
     mapScale: mapScale
   };
+}
+
+function mousePressed() {
+  // reset if sketch is finished
+  if (phase === "end") {
+    phase = "before";
+    timestamp = 0;
+    bIndex = 0;
+    dIndex = 0;
+    pg.clear();
+  }
+}
+
+function keyTyped() {
+  console.log("saving canvas");
+  saveCanvas();
+  console.log("done");
 }
