@@ -1,20 +1,23 @@
 // Global variables
-var pg, flash, backgroundGradient, info, glow, fontRegular;
-var pgWidth = (flashWidth = 1920 * 4);
-var pgHeight = (flashHeight = 1080 * 4);
+var bMap, dMap, flash, backgroundGradient, info, glow, fontRegular;
+var bMapWidth = (dMapWidth = flashWidth = 1920 * 4);
+var bMapHeight = (dMapHeight = flashHeight = 1080 * 4);
 var infoProperties = {
   width: 1000,
   height: 880,
-  x: 6050,
-  y: 100
+  x: 6550,
+  y: 120
 };
+var fr = 30;
+
+// State variables
 var fadeOut = 0;
+var fadeIn = 255;
 var ready = false;
 var data = [],
   before = [],
   during = [];
 var phase = "before";
-var fr = 30;
 var timestamp = 0,
   bIndex = 0,
   dIndex = 0;
@@ -44,8 +47,10 @@ async function setup() {
 
   console.log(before, during);
 
-  pg = createGraphics(pgWidth, pgHeight);
-  pg.noStroke();
+  bMap = createGraphics(bMapWidth, bMapHeight);
+  bMap.noStroke();
+  dMap = createGraphics(dMapWidth, dMapHeight);
+  dMap.noStroke();
   flash = createGraphics(flashWidth, flashHeight);
   flash.noStroke();
   info = createGraphics(infoProperties.width, infoProperties.height);
@@ -66,14 +71,14 @@ function draw() {
   // display dots before catastrophe
   if (phase === "before") {
     while (before[bIndex] && before[bIndex].timelineMs <= currentTime) {
-      pg.fill(65, 217, 242, 50);
-      pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 3, 3);
-      pg.fill(65, 217, 242, 30);
-      pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 6, 6);
-      pg.fill(65, 217, 242, 20);
-      pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 10, 10);
-      pg.fill(65, 217, 242, 10);
-      pg.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
+      bMap.fill(65, 217, 242, 50);
+      bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 3, 3);
+      bMap.fill(65, 217, 242, 30);
+      bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 6, 6);
+      bMap.fill(65, 217, 242, 20);
+      bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 10, 10);
+      bMap.fill(65, 217, 242, 10);
+      bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
 
       // flashing points
       flash.fill(65, 217, 242, 75);
@@ -90,14 +95,14 @@ function draw() {
   // display dots during catastrophe
   if (phase === "during") {
     while (during[dIndex] && during[dIndex].timelineMs <= currentTime) {
-      pg.fill(230, 5, 14, 50);
-      pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 3, 3);
-      pg.fill(230, 5, 14, 30);
-      pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 6, 6);
-      pg.fill(230, 5, 14, 20);
-      pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 10, 10);
-      pg.fill(230, 5, 14, 10);
-      pg.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
+      dMap.fill(230, 5, 14, 50);
+      dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 3, 3);
+      dMap.fill(230, 5, 14, 30);
+      dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 6, 6);
+      dMap.fill(230, 5, 14, 20);
+      dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 10, 10);
+      dMap.fill(230, 5, 14, 10);
+      dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
 
       // flashing points
       flash.fill(230, 5, 14, 75);
@@ -115,23 +120,54 @@ function draw() {
   imageMode(CORNER);
   image(backgroundGradient, 0, 0, width, height);
   // display offscreen canvases
-  image(info, infoProperties.x, infoProperties.y);
-  image(pg, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // large map
-  image(flash, 1920, 0, 1920 * 2, 1080, 1920, 1800, 1920 * 2, 1080); // flashing points
+  image(bMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map before
+  image(dMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map during
+  image(flash, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // flashing points
   imageMode(CENTER);
-  image(pg, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map
+  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
+  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
+
+  textAlign(LEFT, TOP);
+  textSize(30);
+  fill(65, 217, 242);
+  text("Manila, Philippines", 440, 265);
 
   // zoom indicator rectangle
-  rectMode(CENTER);
+  rectMode(CORNER);
   noFill();
-  strokeWeight(5);
+  strokeWeight(4);
   if (phase === "before") {
-    stroke(65, 217, 242, 175);
+    stroke(65, 217, 242);
   } else {
-    stroke(230, 5, 14, 175);
+    stroke(230, 5, 14);
   }
-  rect(960, 570, (1920 * 0.75) / 2, (1080 * 0.75) / 4);
+  rect(425, 470, 1075, 202);
   noStroke();
+
+  // end overlay
+  if (phase === "end") {
+    rectMode(CORNER);
+    fill(1, 6, 25, fadeOut);
+    rect(0, 0, width, height);
+    rectMode(CENTER);
+    textSize(72);
+    fill(255, 255, 255, fadeOut);
+    textAlign(CENTER, CENTER);
+    text("play again", (width / 8) * 5, height / 2);
+
+    if (fadeOut < 255) {
+      fadeOut += 2;
+    } else {
+      compareMaps();
+      rectMode(CORNER);
+      fill(1, 6, 25, fadeIn);
+      rect(0, 0, 3840, 1080);
+      fadeIn -= 2;
+    }
+  }
+
+  imageMode(CORNER);
+  image(info, infoProperties.x, infoProperties.y);
 
   // dynamic text
   var noTweets = (bIndex + dIndex)
@@ -153,9 +189,7 @@ function draw() {
 
   textAlign(LEFT, TOP);
   textSize(30);
-  fill(65, 217, 242, 150);
-  text("Manila, Philippines", 440, 265);
-  fill(0, 0, 0, 80);
+  fill(1, 6, 25, 220);
   strokeWeight(1);
   rectMode(CORNER);
   if (phase === "before") {
@@ -203,28 +237,31 @@ function draw() {
     infoProperties.y + 810
   );
 
-  // end overlay
-  if (phase === "end") {
-    rectMode(CORNER);
-    fill(1, 6, 25, fadeOut);
-    rect(0, 0, width, height);
-    rectMode(CENTER);
-    textSize(72);
-    fill(255, 255, 255, fadeOut);
-    textAlign(CENTER, CENTER);
-    text("play again", width / 2, height / 2);
+  // Legend
+  rectMode(CORNER);
+  fill(1, 6, 25, 220);
+  stroke(65, 217, 242);
+  rect(2120, -1, 590, 61);
+  noStroke();
 
-    if (fadeOut < 180) {
-      fadeOut += 2;
-    }
-  }
+  fill(65, 217, 242);
+  ellipse(2150, 30, 20);
+  fill(230, 5, 14);
+  ellipse(2440, 30, 20);
+
+  textSize(20);
+  textAlign(LEFT, TOP);
+  fill(65, 217, 242);
+  text("tweets before typhoon", 2150 + 20, 18);
+  fill(230, 5, 14);
+  text("tweets during typhoon", 2440 + 20, 18);
 
   // playback speed
   timestamp = timestamp + 10000;
 
-  // if (frameCount % fr == 0) {
-  //   console.log(frameRate());
-  // }
+  if (frameCount % fr == 0) {
+    console.log(frameRate());
+  }
 }
 
 function radialGradient(x, y, w, h, inner, outer) {
@@ -238,7 +275,7 @@ function radialGradient(x, y, w, h, inner, outer) {
   }
 
   backgroundGradient.noFill();
-  backgroundGradient.stroke(65, 217, 242, 20);
+  backgroundGradient.stroke(65, 217, 242, 10);
 
   for (var x = 0; x < width; x += width / 128) {
     backgroundGradient.line(x, 0, x, height);
@@ -262,10 +299,10 @@ function formatData(csv, mapProperties) {
       positionX:
         (csv[i]["longitude.anon"] - mapProperties.mapCenterX) *
           mapProperties.mapScale +
-        pgWidth / 2,
+        bMapWidth / 2,
       positionY:
         (csv[i].latitude - mapProperties.mapCenterY) * mapProperties.mapScale +
-        pgHeight / 2
+        bMapHeight / 2
     };
     data.push(obj);
   }
@@ -278,7 +315,7 @@ function formatData(csv, mapProperties) {
 function infoContent() {
   info.rectMode(CORNER);
   info.noStroke();
-  info.fill(1, 6, 25, 180);
+  info.fill(1, 6, 25, 220);
   info.rect(0, 0, info.width, 660);
   info.fill(65, 217, 242);
   info.rect(0, 0, info.width, 20);
@@ -317,16 +354,6 @@ function infoContent() {
 
   info.rect(0, 294, info.width, 1);
   info.text(description, 20, 326, info.width - 40, 400);
-
-  info.fill(65, 217, 242);
-  info.ellipse(10, info.height - 15, 20);
-  info.fill(230, 5, 14);
-  info.ellipse(235, info.height - 15, 20);
-
-  info.fill(65, 217, 242);
-  info.text("before typhoon", 30, info.height - 25);
-  info.fill(230, 5, 14);
-  info.text("during typhoon", 255, info.height - 25);
 }
 
 function compare(a, b) {
@@ -358,8 +385,8 @@ function mapScale(data) {
 
   // define map scale dimension (longitude or latitude)
   var mapScale = Math.min(
-    (pgWidth / 4 / mapWidth) * 3,
-    (pgHeight / mapHeight) * 3
+    (bMapWidth / 4 / mapWidth) * 3,
+    (bMapHeight / mapHeight) * 3
   );
 
   return {
@@ -369,6 +396,22 @@ function mapScale(data) {
   };
 }
 
+function compareMaps() {
+  imageMode(CENTER);
+  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
+  image(
+    dMap,
+    960 + 1920,
+    540,
+    1920 * 0.75,
+    1080 * 0.75,
+    0,
+    0,
+    1920 * 4,
+    1080 * 4
+  ); //  mini map during
+}
+
 function mousePressed() {
   // reset if sketch is finished
   if (phase === "end") {
@@ -376,7 +419,9 @@ function mousePressed() {
     timestamp = 0;
     bIndex = 0;
     dIndex = 0;
-    pg.clear();
+    fadeOut = 0;
+    bMap.clear();
+    dMap.clear();
   }
 }
 
