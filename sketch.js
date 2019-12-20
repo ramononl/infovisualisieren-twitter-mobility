@@ -5,7 +5,7 @@ var bMapHeight = (dMapHeight = flashHeight = 1080 * 4);
 var infoProperties = {
   width: 1000,
   height: 880,
-  x: 6550,
+  x: 6230,
   y: 120
 };
 var fr = 30;
@@ -123,14 +123,6 @@ function draw() {
   image(bMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map before
   image(dMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map during
   image(flash, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // flashing points
-  imageMode(CENTER);
-  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
-  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
-
-  textAlign(LEFT, TOP);
-  textSize(30);
-  fill(65, 217, 242);
-  text("Manila, Philippines", 440, 265);
 
   // zoom indicator rectangle
   rectMode(CORNER);
@@ -141,8 +133,30 @@ function draw() {
   } else {
     stroke(230, 5, 14);
   }
-  rect(425, 470, 1075, 202);
+  rect(420, 470, 1080, 202);
   noStroke();
+
+  // Legend
+  rectMode(CORNER);
+  fill(65, 217, 242);
+  strokeWeight(1);
+  stroke(65, 217, 242);
+  rect(2080, 80, 300, 20);
+  fill(1, 6, 25, 220);
+  rect(2080, 100, 300, 100);
+  noStroke();
+
+  fill(65, 217, 242);
+  ellipse(2110, 130, 20);
+  fill(230, 5, 14);
+  ellipse(2110, 170, 20);
+
+  textSize(20);
+  textAlign(LEFT, TOP);
+  fill(65, 217, 242);
+  text("tweets before typhoon", 2110 + 20, 118);
+  fill(230, 5, 14);
+  text("tweets during typhoon", 2110 + 20, 158);
 
   // end overlay
   if (phase === "end") {
@@ -151,23 +165,21 @@ function draw() {
     rect(0, 0, width, height);
     rectMode(CENTER);
     textSize(72);
-    fill(255, 255, 255, fadeOut);
+    fill(65, 217, 242, fadeOut);
     textAlign(CENTER, CENTER);
-    text("play again", (width / 8) * 5, height / 2);
+    text("play  again", width / 2, height / 2);
 
-    if (fadeOut < 255) {
+    if (fadeOut < 220) {
       fadeOut += 2;
-    } else {
-      compareMaps();
-      rectMode(CORNER);
-      fill(1, 6, 25, fadeIn);
-      rect(0, 0, 3840, 1080);
-      fadeIn -= 2;
     }
   }
 
   imageMode(CORNER);
   image(info, infoProperties.x, infoProperties.y);
+
+  imageMode(CENTER);
+  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
+  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
 
   // dynamic text
   var noTweets = (bIndex + dIndex)
@@ -189,6 +201,9 @@ function draw() {
 
   textAlign(LEFT, TOP);
   textSize(30);
+  fill(65, 217, 242);
+  text("Manila, Philippines", 440, 265);
+
   fill(1, 6, 25, 220);
   strokeWeight(1);
   rectMode(CORNER);
@@ -237,31 +252,12 @@ function draw() {
     infoProperties.y + 810
   );
 
-  // Legend
-  rectMode(CORNER);
-  fill(1, 6, 25, 220);
-  stroke(65, 217, 242);
-  rect(2120, -1, 590, 61);
-  noStroke();
-
-  fill(65, 217, 242);
-  ellipse(2150, 30, 20);
-  fill(230, 5, 14);
-  ellipse(2440, 30, 20);
-
-  textSize(20);
-  textAlign(LEFT, TOP);
-  fill(65, 217, 242);
-  text("tweets before typhoon", 2150 + 20, 18);
-  fill(230, 5, 14);
-  text("tweets during typhoon", 2440 + 20, 18);
-
   // playback speed
-  timestamp = timestamp + 10000;
+  timestamp = timestamp + 15000;
 
-  if (frameCount % fr == 0) {
-    console.log(frameRate());
-  }
+  // if (frameCount % fr == 0) {
+  //   console.log(frameRate());
+  // }
 }
 
 function radialGradient(x, y, w, h, inner, outer) {
@@ -399,17 +395,7 @@ function mapScale(data) {
 function compareMaps() {
   imageMode(CENTER);
   image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
-  image(
-    dMap,
-    960 + 1920,
-    540,
-    1920 * 0.75,
-    1080 * 0.75,
-    0,
-    0,
-    1920 * 4,
-    1080 * 4
-  ); //  mini map during
+  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
 }
 
 function mousePressed() {
