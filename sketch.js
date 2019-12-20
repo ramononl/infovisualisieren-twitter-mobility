@@ -1,60 +1,79 @@
-// Global variables
-var bMap, dMap, flash, backgroundGradient, info, glow, fontRegular;
-var bMapWidth = (dMapWidth = flashWidth = 1920 * 4);
-var bMapHeight = (dMapHeight = flashHeight = 1080 * 4);
+// global variables
+var fontRegular;
+var fr = 30;
+
+// offscreen canvases
+var bMap, dMap, flash, canvasBackground, info;
+var canvasProperties = {
+  width: 1920 * 4,
+  height: 1080 * 4
+};
 var infoProperties = {
   width: 1000,
   height: 880,
   x: 6230,
   y: 120
 };
-var fr = 30;
 
-// State variables
+// color variables
+var cDarkBlue = [1, 6, 25]; // r, g, b
+var cLightBlue = [0, 60, 91]; // r, g, b
+var cTurquoise = [65, 217, 242]; // r, g, b
+var cRed = [230, 5, 14]; // r, g, b
+
+// state variables
 var fadeOut = 0;
-var fadeIn = 255;
 var ready = false;
-var data = [],
-  before = [],
-  during = [];
 var phase = "before";
-var timestamp = 0,
-  bIndex = 0,
-  dIndex = 0;
+var data = (before = during = []);
+var timestamp = (bIndex = dIndex = 0);
+
+// canvas capturer instance
+// var capturer = new CCapture({ format: "png", framerate: fr });
 
 function preload() {
   fontRegular = loadFont("assets/ShareTechMono.ttf");
 }
 
 async function setup() {
+  // create main canvas
   createCanvas(1920 * 4, 1080);
+
+  // set default font
   textFont(fontRegular);
 
-  // radial gradient background
-  var outer = color(1, 6, 25);
-  var inner = color(0, 60, 91);
-  backgroundGradient = createGraphics(width, height);
-  radialGradient(width / 2, height / 2, width * 1.2, width * 1.2, inner, outer);
-
-  var csv = await loadData("data/natural_disaster_human_mobility_rammasun.csv");
-
-  var mapProperties = mapScale(csv);
-
-  data = formatData(csv, mapProperties);
-
-  before = data.slice(39563, 257670); // 2014-07-02 to 2014-07-11: 9 days
-  during = data.slice(257670, 521008); // 2014-07-12 to 2014-07-21: 9 days – hit on 2014-07-16
-
-  console.log(before, during);
-
-  bMap = createGraphics(bMapWidth, bMapHeight);
+  // create offscreen canvases
+  canvasBackground = createGraphics(width, height);
+  createBackground(
+    width / 2,
+    height / 2,
+    width * 1.2,
+    width * 1.2,
+    color(cLightBlue[0], cLightBlue[1], cLightBlue[2]),
+    color(cDarkBlue[0], cDarkBlue[1], cDarkBlue[2])
+  );
+  bMap = createGraphics(canvasProperties.width, canvasProperties.height);
   bMap.noStroke();
-  dMap = createGraphics(dMapWidth, dMapHeight);
+  dMap = createGraphics(canvasProperties.width, canvasProperties.height);
   dMap.noStroke();
-  flash = createGraphics(flashWidth, flashHeight);
+  flash = createGraphics(canvasProperties.width, canvasProperties.height);
   flash.noStroke();
   info = createGraphics(infoProperties.width, infoProperties.height);
   infoContent();
+
+  // load csv
+  var csv = await loadData("data/natural_disaster_human_mobility_rammasun.csv");
+
+  // calculate map scale
+  var mapProperties = mapScale(csv);
+
+  // format entries, calculate coordinates, sort entries
+  data = formatData(csv, mapProperties);
+
+  // slice data into before/during arrays
+  before = data.slice(39563, 257670); // 2014-07-02 - 2014-07-11
+  during = data.slice(257670, 521008); // 2014-07-12 - 2014-07-21
+  // console.log(before, during);
 
   frameRate(fr);
   ready = true;
@@ -64,153 +83,175 @@ function draw() {
   if (!ready) {
     return;
   }
-  var currentTime = (timestamp / fr) * 1000;
 
+  // clear flash canvas
   flash.clear();
 
-  // display dots before catastrophe
+  // calculate current time based on frame rate
+  var currentTime = (timestamp / fr) * 1000;
+
+  // add dots before catastrophe
   if (phase === "before") {
     while (before[bIndex] && before[bIndex].timelineMs <= currentTime) {
-      bMap.fill(65, 217, 242, 50);
+      // create "blurry" permanent dots
+      bMap.fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], 50);
       bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 3, 3);
-      bMap.fill(65, 217, 242, 30);
+      bMap.fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], 30);
       bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 6, 6);
-      bMap.fill(65, 217, 242, 20);
+      bMap.fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], 20);
       bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 10, 10);
-      bMap.fill(65, 217, 242, 10);
+      bMap.fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], 10);
       bMap.ellipse(before[bIndex].positionX, before[bIndex].positionY, 15, 15);
 
-      // flashing points
-      flash.fill(65, 217, 242, 75);
+      // create temporary, flashing points
+      flash.fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], 75);
       flash.ellipse(before[bIndex].positionX, before[bIndex].positionY, 20, 20);
 
       bIndex++;
     }
+    // end of before array
     if (!before[bIndex]) {
       phase = "during";
       console.log(phase);
+      // start the recording
+      // capturer.start();
     }
   }
 
-  // display dots during catastrophe
+  // add dots during catastrophe
   if (phase === "during") {
     while (during[dIndex] && during[dIndex].timelineMs <= currentTime) {
-      dMap.fill(230, 5, 14, 50);
+      // create "blurry" permanent dots
+      dMap.fill(cRed[0], cRed[1], cRed[2], 50);
       dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 3, 3);
-      dMap.fill(230, 5, 14, 30);
+      dMap.fill(cRed[0], cRed[1], cRed[2], 30);
       dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 6, 6);
-      dMap.fill(230, 5, 14, 20);
+      dMap.fill(cRed[0], cRed[1], cRed[2], 20);
       dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 10, 10);
-      dMap.fill(230, 5, 14, 10);
+      dMap.fill(cRed[0], cRed[1], cRed[2], 10);
       dMap.ellipse(during[dIndex].positionX, during[dIndex].positionY, 15, 15);
 
-      // flashing points
-      flash.fill(230, 5, 14, 75);
+      // create temporary, flashing points
+      flash.fill(cRed[0], cRed[1], cRed[2], 75);
       flash.ellipse(during[dIndex].positionX, during[dIndex].positionY, 20, 20);
 
       dIndex++;
     }
+    // end of during array
     if (!during[dIndex]) {
       phase = "end";
       console.log(phase);
     }
   }
 
-  // background canvas
+  // display centecRed background gradient canvas
   imageMode(CORNER);
-  image(backgroundGradient, 0, 0, width, height);
-  // display offscreen canvases
-  image(bMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map before
-  image(dMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // large map during
-  image(flash, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080); // flashing points
+  image(canvasBackground, 0, 0, width, height);
 
-  // zoom indicator rectangle
-  rectMode(CORNER);
-  noFill();
-  strokeWeight(4);
-  if (phase === "before") {
-    stroke(65, 217, 242);
-  } else {
-    stroke(230, 5, 14);
-  }
-  rect(420, 470, 1080, 202);
-  noStroke();
+  // display bMap, dMap and flash canvas
+  image(bMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080);
+  image(dMap, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080);
+  image(flash, 1920, 0, 1920 * 3, 1080, 950, 1800, 1920 * 3, 1080);
 
-  // Legend
+  // definition figure
   rectMode(CORNER);
-  fill(65, 217, 242);
+  fill(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   strokeWeight(1);
-  stroke(65, 217, 242);
+  stroke(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   rect(2080, 80, 300, 20);
-  fill(1, 6, 25, 220);
+  fill(cDarkBlue[0], cDarkBlue[1], cDarkBlue[2], 220);
   rect(2080, 100, 300, 100);
   noStroke();
 
-  fill(65, 217, 242);
+  fill(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   ellipse(2110, 130, 20);
-  fill(230, 5, 14);
+  fill(cRed[0], cRed[1], cRed[2]);
   ellipse(2110, 170, 20);
 
   textSize(20);
   textAlign(LEFT, TOP);
-  fill(65, 217, 242);
+  fill(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   text("tweets before typhoon", 2110 + 20, 118);
-  fill(230, 5, 14);
+  fill(cRed[0], cRed[1], cRed[2]);
   text("tweets during typhoon", 2110 + 20, 158);
 
-  // end overlay
+  // ending overlay
   if (phase === "end") {
     rectMode(CORNER);
-    fill(1, 6, 25, fadeOut);
+    fill(cDarkBlue[0], cDarkBlue[1], cDarkBlue[2], fadeOut);
     rect(0, 0, width, height);
     rectMode(CENTER);
     textSize(72);
-    fill(65, 217, 242, fadeOut);
+    fill(cTurquoise[0], cTurquoise[1], cTurquoise[2], fadeOut);
     textAlign(CENTER, CENTER);
     text("play  again", width / 2, height / 2);
 
-    if (fadeOut < 220) {
+    if (fadeOut <= 220) {
       fadeOut += 2;
+    } else {
+      // capturer.stop();
+      // capturer.save();
     }
   }
 
+  // display info table
   imageMode(CORNER);
   image(info, infoProperties.x, infoProperties.y);
 
+  // display bMap and dMap mini maps
   imageMode(CENTER);
-  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
-  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
+  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4);
+  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4);
 
-  // dynamic text
+  // mini map city label
+  textAlign(LEFT, TOP);
+  textSize(30);
+  fill(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
+  text("Manila, Philippines", 460, 265);
+
+  // detail area indicator rectangle
+  rectMode(CORNER);
+  noFill();
+  strokeWeight(4);
+  if (phase === "before") {
+    stroke(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
+  } else {
+    stroke(cRed[0], cRed[1], cRed[2]);
+  }
+  if (phase !== "end") {
+    rect(420, 470, 1080, 202);
+  }
+  noStroke();
+
+  // get current number of tweets, format with thousand seperator
   var noTweets = (bIndex + dIndex)
     .toString()
     .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 
+  // get current date and time (timestamp)
   var displayDate;
   if (phase === "before") {
     displayDate = before[bIndex].dateTime;
   } else if (phase === "during") {
     displayDate = during[dIndex].dateTime;
   } else {
+    // last date
     displayDate = during[during.length - 1].dateTime;
   }
 
+  // split timestamp into date and time
   displayDate = displayDate.split(" ");
   displayDateDay = displayDate[0];
   displayDateTime = displayDate[1];
 
-  textAlign(LEFT, TOP);
-  textSize(30);
-  fill(65, 217, 242);
-  text("Manila, Philippines", 440, 265);
-
-  fill(1, 6, 25, 220);
+  // display tweet counter, date and time
+  fill(cDarkBlue[0], cDarkBlue[1], cDarkBlue[2], 220);
   strokeWeight(1);
   rectMode(CORNER);
   if (phase === "before") {
-    stroke(65, 217, 242);
+    stroke(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   } else {
-    stroke(230, 5, 14);
+    stroke(cRed[0], cRed[1], cRed[2]);
   }
   rect(infoProperties.x, infoProperties.y + 700, info.width / 2, 135);
   rect(
@@ -220,9 +261,9 @@ function draw() {
     135
   );
   if (phase === "before") {
-    fill(65, 217, 242);
+    fill(cTurquoise[0], cTurquoise[1], cTurquoise[2]);
   } else {
-    fill(230, 5, 14);
+    fill(cRed[0], cRed[1], cRed[2]);
   }
   noStroke();
   rect(infoProperties.x, infoProperties.y + 700, info.width, 20);
@@ -255,30 +296,34 @@ function draw() {
   // playback speed
   timestamp = timestamp + 15000;
 
+  // check frame rate
   // if (frameCount % fr == 0) {
   //   console.log(frameRate());
   // }
+
+  // selecte canvas to capture
+  // capturer.capture(document.getElementById("defaultCanvas0"));
 }
 
-function radialGradient(x, y, w, h, inner, outer) {
-  backgroundGradient.noStroke();
-  backgroundGradient.fill(0);
+function createBackground(x, y, w, h, inner, outer) {
+  // create radial gradient
+  canvasBackground.noStroke();
+  canvasBackground.fill(0);
   for (let i = Math.max(w, h); i > 0; i--) {
     const step = i / Math.max(w, h);
     const color = lerpColor(inner, outer, step);
-    backgroundGradient.fill(color);
-    backgroundGradient.ellipse(x, y, step * w, step * h);
+    canvasBackground.fill(color);
+    canvasBackground.ellipse(x, y, step * w, step * h);
   }
 
-  backgroundGradient.noFill();
-  backgroundGradient.stroke(65, 217, 242, 10);
-
+  // create grid
+  canvasBackground.noFill();
+  canvasBackground.stroke(cTurquoise[0], cTurquoise[1], cTurquoise[2], 10);
   for (var x = 0; x < width; x += width / 128) {
-    backgroundGradient.line(x, 0, x, height);
+    canvasBackground.line(x, 0, x, height);
   }
-
   for (var y = 0; y < height; y += height / 18) {
-    backgroundGradient.line(0, y, width, y);
+    canvasBackground.line(0, y, width, y);
   }
 }
 
@@ -295,14 +340,15 @@ function formatData(csv, mapProperties) {
       positionX:
         (csv[i]["longitude.anon"] - mapProperties.mapCenterX) *
           mapProperties.mapScale +
-        bMapWidth / 2,
+        canvasProperties.width / 2,
       positionY:
         (csv[i].latitude - mapProperties.mapCenterY) * mapProperties.mapScale +
-        bMapHeight / 2
+        canvasProperties.height / 2
     };
     data.push(obj);
   }
 
+  // sort entries by date/time
   data = data.sort(compare);
 
   return data;
@@ -381,8 +427,8 @@ function mapScale(data) {
 
   // define map scale dimension (longitude or latitude)
   var mapScale = Math.min(
-    (bMapWidth / 4 / mapWidth) * 3,
-    (bMapHeight / mapHeight) * 3
+    (canvasProperties.width / 4 / mapWidth) * 3,
+    (canvasProperties.height / mapHeight) * 3
   );
 
   return {
@@ -390,12 +436,6 @@ function mapScale(data) {
     mapCenterY: mapCenterY,
     mapScale: mapScale
   };
-}
-
-function compareMaps() {
-  imageMode(CENTER);
-  image(bMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map before
-  image(dMap, 960, 540, 1920 * 0.75, 1080 * 0.75, 0, 0, 1920 * 4, 1080 * 4); //  mini map during
 }
 
 function mousePressed() {
@@ -411,8 +451,8 @@ function mousePressed() {
   }
 }
 
-function keyTyped() {
-  console.log("saving canvas");
-  saveCanvas();
-  console.log("done");
-}
+// function keyTyped() {
+//   console.log("saving canvas");
+//   saveCanvas();
+//   console.log("done");
+// }
