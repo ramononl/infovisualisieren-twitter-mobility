@@ -1,5 +1,5 @@
 // global variables
-var fontRegular;
+var fontRegular, bgSound;
 var fr = 30;
 
 // offscreen canvases
@@ -33,6 +33,8 @@ var timestamp = (bIndex = dIndex = 0);
 
 function preload() {
   fontRegular = loadFont("assets/ShareTechMono.ttf");
+  soundFormats("wav");
+  bgSound = loadSound("assets/sound.wav");
 }
 
 async function setup() {
@@ -82,6 +84,11 @@ async function setup() {
 function draw() {
   if (!ready) {
     return;
+  }
+
+  if (ready && timestamp === 0) {
+    bgSound.setVolume(1);
+    bgSound.play();
   }
 
   // clear flash canvas
