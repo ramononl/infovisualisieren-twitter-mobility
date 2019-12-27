@@ -86,6 +86,7 @@ function draw() {
     return;
   }
 
+  // start sound on when ready
   if (ready && timestamp === 0) {
     bgSound.setVolume(1);
     bgSound.play();
